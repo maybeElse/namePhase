@@ -5,6 +5,7 @@ import emoji
 from astral import moon
 import json
 import tweepy
+import re
 
 def phase_emoji(time: datetime):
     phase = moon.phase(time)
@@ -53,14 +54,26 @@ def get_config() -> dict:
 def get_api() -> tweepy.API:
     config=get_config()
 
-    auth = tweepy.OAuthHandler(config['tokens']['consumer_key'], config['tokens']['consumer_secret'])
-    auth.set_access_token(config['tokens']['access_token'], config['tokens']['access_token_secret'])
+    auth = tweepy.OAuth1UserHandler(
+        config['tokens']['consumer_key'], config['tokens']['consumer_secret'],
+        config['tokens']['access_token'], config['tokens']['access_token_secret']
+        )
 
     return tweepy.API(auth)
                   
 api = get_api()
-
+user = api.verify_credentials()
 phase = phase_emoji(datetime.datetime.now())
-newname = emoji.emojize("Else, or close enough %s:sparkles:" % (phase[1]))
 
-api.update_profile(name=newname, skip_status=True)
+# name = emoji.demojize(user.name) # change emoji to :emoji_name: format
+# name = (re.sub('\:[a-z_]*_moon\:', '%s', name)) # replace moon emoji with %s
+# name = emoji.emojize(name % phase[1]) # insert new emoji into name
+
+name = emoji.emojize( 
+    (re.sub('\:[a-z_]*_moon\:', '%s',
+        emoji.demojize(user.name))
+    ) % phase[1])
+
+# print(name)
+
+api.update_profile(name=name, skip_status=True)
