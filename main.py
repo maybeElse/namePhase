@@ -2,32 +2,16 @@
 
 import datetime
 import emoji
-from astral import moon
 import json
 import tweepy
 import re
 
-def phase_emoji(time: datetime):
-    phase = moon.phase(time)
+import moonphase
 
-    if phase < 3: # new moon
-        return (phase, ":new_moon:")
-    elif phase < 6.5: # waxing crescent
-        return (phase, ":waxing_crescent_moon:")
-    elif phase < 9: # first quarter
-        return (phase, ":first_quarter_moon:")
-    elif phase < 12: # waxing gibbous
-        return (phase, ":waxing_gibbous_moon:")
-    elif phase < 17.5: # full moon
-        return (phase, ":full_moon:")
-    elif phase < 20: # waning gibbous
-        return (phase, ":waning_gibbous_moon:")
-    elif phase < 23: # last quarter
-        return (phase, ":last_quarter_moon:")
-    elif phase < 27: # waning crescent
-        return (phase, ":waning_crescent_moon:")
-    else:
-        return (phase, ":new_moon:")
+def phase_emoji(time: datetime):
+    phasename = moonphase.phase(moonphase.position())
+
+    return ":%s_moon:" % phasename.replace(" ", "_").lower()
 
 def get_config() -> dict:
     try:
@@ -72,8 +56,8 @@ phase = phase_emoji(datetime.datetime.now())
 name = emoji.emojize( 
     (re.sub('\:[a-z_]*_moon\:', '%s',
         emoji.demojize(user.name))
-    ) % phase[1])
+    ) % phase)
 
-# print(name)
+print(name)
 
 api.update_profile(name=name, skip_status=True)
