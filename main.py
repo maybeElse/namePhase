@@ -5,6 +5,8 @@ import emoji
 import json
 import tweepy
 import re
+import time
+import random
 
 import moonphase
 
@@ -20,6 +22,7 @@ def get_config() -> dict:
     except FileNotFoundError:
         print('config.json does not appear to exist!')
         config = {
+            'multiple':false,
             'tokens':{
                 'consumer_key':'', 'consumer_secret':'', 'access_token':'', 'access_token_secret':''
                 }
@@ -35,29 +38,40 @@ def get_config() -> dict:
     else:
         return config
 
-def get_api() -> tweepy.API:
-    config=get_config()
-
+def get_api(consumer_key, consumer_secret, access_token, access_token_secret) -> tweepy.API:
     auth = tweepy.OAuth1UserHandler(
-        config['tokens']['consumer_key'], config['tokens']['consumer_secret'],
-        config['tokens']['access_token'], config['tokens']['access_token_secret']
+        consumer_key, consumer_secret, access_token, access_token_secret
         )
 
     return tweepy.API(auth)
-                  
-api = get_api()
-user = api.verify_credentials()
-phase = phase_emoji(datetime.datetime.now())
 
-# name = emoji.demojize(user.name) # change emoji to :emoji_name: format
-# name = (re.sub('\:[a-z_]*_moon\:', '%s', name)) # replace moon emoji with %s
-# name = emoji.emojize(name % phase[1]) # insert new emoji into name
+def update_name(api: tweepy.API):
+    user = api.verify_credentials()
+    phase = phase_emoji(datetime.datetime.now())
 
-name = emoji.emojize( 
-    (re.sub('\:[a-z_]*_moon\:', '%s',
-        emoji.demojize(user.name))
-    ) % phase)
+    name = emoji.emojize( 
+        (re.sub('\:[a-z_]*_moon\:', '%s',
+            emoji.demojize(user.name))
+        ) % phase)
 
-print(name)
+    print(name)
 
-api.update_profile(name=name, skip_status=True)
+    api.update_profile(name=name, skip_status=True)
+
+config = get_config()
+
+if config['multiple'] is True:
+    for user in config['tokens']:
+        token = config['tokens'][user]
+        keys = config['keys']
+        api = get_api(
+            keys['consumer_key'], keys['consumer_secret'], token['access_token'], token['access_token_secret']
+        )
+        update_name(api)
+        time.sleep(random.random()*3)
+
+else: 
+    api = get_api(
+        config['tokens']['consumer_key'], config['tokens']['consumer_secret'],
+        config['tokens']['access_token'], config['tokens']['access_token_secret'])
+    update_name(api)
